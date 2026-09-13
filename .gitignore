@@ -1,0 +1,20 @@
+node_modules/
+.next/
+.next-medida/
+out/
+build/
+.DS_Store
+
+.env
+.env.local
+.env*.local
+
+*.tsbuildinfo
+next-env.d.ts
+
+.vercel
+.supabase/
+
+# Videos crus de trabalho. O do hero ja esta versionado em public/capa/lumen.mp4;
+# estas sao versoes antigas que nao precisam ir para o repositorio nem para o deploy.
+.video-capa/

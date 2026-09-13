@@ -1,0 +1,14 @@
+# Segredos — nunca sobem no pacote. As variaveis vao pelo painel/CLI, nao pelo arquivo.
+.env.local
+.env*.local
+
+# Builds locais — o Vercel refaz o dele.
+.next
+.next-medida
+
+# Videos crus de trabalho. O do hero ja esta em public/capa/lumen.mp4; estes dois
+# sao versoes antigas que nao precisam ir para producao.
+.video-capa
+
+# Dependencias — o Vercel instala a partir do package-lock.
+node_modules

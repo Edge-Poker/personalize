@@ -1,0 +1,1786 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   persona.lize — sistema visual
+
+   A direção está no DESIGN_REVISION.md, que corrige o DESIGN.md original.
+   Resumo do que mudou e por quê: a primeira versão era tecnicamente boa e
+   genérica. Fundo escuro, serifada old-style, paleta quase monocromática, e a
+   personalidade saindo da composição em vez da cor.
+
+   Os nomes dos tokens e das classes foram preservados de propósito. O painel,
+   o editor e as páginas de login consomem --papel, --tinta, .titulo-3, .acao e
+   companhia; trocar os nomes junto com os valores quebraria tudo isso sem
+   necessidade. Mudaram os valores, não o vocabulário.
+
+   Contrastes conferidos em scripts/checar-cores.py.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. A paleta
+   --------------------------------------------------------------------------
+   Uma só.
+
+   Existiram três — calmo, direto e autoral —, e trocar entre elas era o
+   diferencial 5.1 do briefing original. Saiu inteiro: o produto passou a se
+   apresentar pela capa, e um seletor de temperamento no meio da frase virava
+   uma segunda coisa disputando a mesma atenção. Ficaram os valores do calmo,
+   que era o padrão e portanto o que o site já mostrava.
+
+   Os nomes dos tokens foram preservados. O painel, o editor e o login consomem
+   --papel, --tinta, .titulo-3, .acao e companhia; renomear junto com o corte
+   quebraria tudo isso sem necessidade.
+
+   Contrastes medidos: branco sobre preto 21,00:1 — o máximo que existe —,
+   acento sobre preto 14,61:1, cinza secundário 5,32:1, e preto sobre acento
+   14,61:1 para o botão preenchido. Todos acima do exigido, com folga.
+   -------------------------------------------------------------------------- */
+
+:root {
+  /*
+    Preto puro, e não um grafite.
+
+    A paleta antiga era quente e clara demais para o vídeo da capa, que é luz
+    fria sobre preto absoluto. Qualquer cinza no fundo do site aparecia como uma
+    borda visível em volta do vídeo — dois pretos diferentes na mesma tela leem
+    como erro de exportação. Agora o fundo do site e o fundo do vídeo são o
+    mesmo valor, e a capa não tem onde terminar.
+
+    O acento veio do próprio vídeo: é o azul-gelo das flores.
+  */
+  --papel: #000000;
+  --tinta: #ffffff;
+  --tinta-fraca: rgba(255, 255, 255, 0.5);
+  --acento: #afddff;
+  --bloco: #1b2530;
+  --linha: rgba(255, 255, 255, 0.16);
+
+  /* Sobrou da época dos temperamentos: era o que a paleta interpolava. Hoje é
+     constante, e continua aqui só porque a escala de espaço é calculada a
+     partir dele. */
+  --peso: 500;
+  --densidade: 1.06;
+  --tracking: 0px;
+
+  /* Progressão aditiva: cada passo é a soma dos dois anteriores. Não é
+     8/16/24/32 — é a matemática de arranjo de folha em caule. */
+  --e1: calc(4px * var(--densidade));
+  --e2: calc(7px * var(--densidade));
+  --e3: calc(11px * var(--densidade));
+  --e4: calc(18px * var(--densidade));
+  --e5: calc(29px * var(--densidade));
+  --e6: calc(47px * var(--densidade));
+  --e7: calc(76px * var(--densidade));
+  --e8: calc(123px * var(--densidade));
+  --e9: calc(199px * var(--densidade));
+
+  /* Duas curvas com papéis diferentes. A longa acompanha mudança de estado
+     grande. A de interface é curta e desacelera rápido: é resposta ao seu
+     cursor, e resposta lenta parece travamento. */
+  --curva: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --curva-ui: cubic-bezier(0.16, 0.84, 0.28, 1);
+  /* A curva das animações da biblioteca. Sai forte e para macio. */
+  --curva-fx: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-papel: var(--papel);
+  --color-tinta: var(--tinta);
+  --color-tinta-fraca: var(--tinta-fraca);
+  --color-acento: var(--acento);
+  --color-bloco: var(--bloco);
+  --color-linha: var(--linha);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Base
+   -------------------------------------------------------------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--papel);
+}
+
+body {
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--fonte-texto), Georgia, serif;
+  font-size: 17px;
+  line-height: 1.62;
+  letter-spacing: var(--tracking);
+}
+
+::selection {
+  background: var(--acento);
+  color: var(--papel);
+}
+
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 3px;
+  border-radius: 0;
+}
+
+a, button, label, input, select, textarea { color: inherit; }
+img { max-width: 100%; height: auto; display: block; }
+
+/* --------------------------------------------------------------------------
+   5. Tipografia
+   --------------------------------------------------------------------------
+   Escala irregular de propósito: as razões vão de 1,13 a 1,41. Razão constante
+   soa mecânica.
+   -------------------------------------------------------------------------- */
+
+.display,
+.titulo-1,
+.titulo-2,
+.titulo-3,
+.titulo-4 {
+  font-family: var(--fonte-display), Garamond, Georgia, serif;
+  font-weight: var(--peso);
+  text-wrap: balance;
+}
+
+.display {
+  font-size: clamp(36px, 7vw, 74px);
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+}
+
+.titulo-1 { font-size: clamp(31px, 4.6vw, 54px); line-height: 1.08; letter-spacing: -0.014em; }
+.titulo-2 { font-size: clamp(25px, 3.4vw, 39px); line-height: 1.14; letter-spacing: -0.011em; }
+.titulo-3 { font-size: clamp(21px, 2.4vw, 28px); line-height: 1.22; letter-spacing: -0.008em; }
+.titulo-4 { font-size: 22px; line-height: 1.3; letter-spacing: -0.006em; }
+
+.corpo-g { font-size: 20px; line-height: 1.55; }
+.corpo   { font-size: 17px; line-height: 1.62; }
+.corpo-p { font-size: 15px; line-height: 1.6; }
+
+/*
+  A nota de margem. A versão anterior era serifada itálica pequena — que é o
+  eyebrow em CAIXA ALTA vestido melhor, e um tell de site de estúdio. Agora é
+  o mesmo corpo de texto, só em cinza: informação, não etiqueta.
+*/
+.nota {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tinta-fraca);
+  text-wrap: pretty;
+}
+
+.medida { max-width: 62ch; text-wrap: pretty; }
+.numero { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/*
+  Ênfase sem negrito e sem cor: a palavra troca de família e de postura.
+  No meio de uma linha de Source Serif, uma palavra no itálico da Garamond
+  muda de textura sem mudar de tamanho nem de tom.
+*/
+.enfase {
+  font-family: var(--fonte-display), Garamond, Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.004em;
+}
+
+/* --------------------------------------------------------------------------
+   6. Grade de 13
+   --------------------------------------------------------------------------
+   13 é primo: nada divide em partes iguais, então não existe grade de três ou
+   quatro blocos idênticos. A assimetria vem da estrutura.
+
+   O que mudou em relação à versão anterior: a calha deixou de ser fixa, e
+   existe uma quebra medida — um elemento por seção pode entrar uma coluna na
+   margem, sempre para o mesmo lado. Quebra medida lê como decisão; quebra
+   aleatória lê como bug.
+   -------------------------------------------------------------------------- */
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  column-gap: var(--e4);
+  row-gap: var(--e5);
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: var(--e5);
+}
+
+.calha  { grid-column: 1 / 5; }
+.mancha { grid-column: 5 / 14; }
+.quebra { grid-column: 4 / 14; }
+.mancha-recuada { grid-column: 7 / 14; }
+.mancha-larga   { grid-column: 3 / 14; }
+
+@media (max-width: 760px) {
+  .grade {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    padding-inline: var(--e4);
+    row-gap: var(--e4);
+  }
+  .calha, .mancha, .quebra, .mancha-recuada, .mancha-larga { grid-column: 1 / -1; }
+
+  /* No mobile a calha vira anotação com fio à esquerda, para continuar
+     parecendo nota de margem e não subtítulo. */
+  .calha { border-left: 1px solid var(--linha); padding-left: var(--e3); }
+}
+
+/* --------------------------------------------------------------------------
+   7. Sobreimpressão
+   --------------------------------------------------------------------------
+   No claro seria `multiply` — tinta sobre papel. No escuro a metáfora é luz
+   sobre preto, e o blend certo é `screen`: onde dois claros se cruzam,
+   clareia. A ideia sobrevive invertida.
+
+   Máximo dois blocos por página, nunca dois seguidos. Sem esse limite vira
+   papel de parede em três telas.
+   -------------------------------------------------------------------------- */
+
+.bloco {
+  background: var(--bloco);
+  mix-blend-mode: screen;
+}
+
+/* --------------------------------------------------------------------------
+   8. A cota
+   --------------------------------------------------------------------------
+   Substitui o fio de 1px. É linha de cota de desenho técnico: traço com
+   marcação nas pontas e a informação sentada em cima. Divisória que informa.
+   -------------------------------------------------------------------------- */
+
+.cota {
+  position: relative;
+  border-top: 1px solid var(--linha);
+  padding-top: var(--e3);
+  margin-top: var(--e5);
+}
+
+.cota::before,
+.cota::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  width: 1px;
+  height: 9px;
+  background: var(--linha);
+}
+
+.cota::before { left: 0; }
+.cota::after  { right: 0; }
+
+/* Fio simples, para onde a cota seria exagero. */
+.fio { border: 0; border-top: 1px solid var(--linha); margin: 0; }
+
+/* --------------------------------------------------------------------------
+   9. Coisas que se clicam
+   --------------------------------------------------------------------------
+   A regra "nada se move sozinho" foi revogada a pedido.
+
+   O que sobrou no lugar dela é uma regra mais fraca e mais útil: movimento
+   autônomo só onde ele carrega significado — a marca, que é a identidade, e a
+   chegada de cada bloco, que dá ritmo à leitura. Nada de parallax, nada de
+   card flutuando, nada de elemento que se mexe porque dá.
+   -------------------------------------------------------------------------- */
+
+/*
+  Um botão só.
+
+  Existiam quatro aparências — `.acao` vazada em acento, `.acao-forte`
+  preenchida, `.pilula` em branco, `.pilula-vazada` em acento. O resultado é
+  que passar o cursor por dois botões vizinhos dava duas cores diferentes, e
+  isso lê como inconsistência, não como hierarquia.
+
+  Agora todos repousam iguais: contorno fino, texto branco, fundo nenhum. O
+  acento entra no hover, varrendo da esquerda — o olho lê a direção do
+  preenchimento como "isto está acontecendo", coisa que a troca instantânea de
+  cor não diz.
+
+  A diferença entre um botão principal e um secundário passou a ser onde ele
+  está e o que ele diz, e não a cor. É como funciona em impresso, onde ninguém
+  tem cor sobrando.
+*/
+.acao,
+.pilula {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e2);
+  min-height: 44px;
+  padding: var(--e2) var(--e4);
+  border: 1px solid var(--linha);
+  border-radius: 0;
+  background: none;
+  color: var(--tinta);
+  font-family: var(--fonte-texto), Georgia, serif;
+  font-size: 16px;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.acao::before,
+.pilula::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--acento);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.acao:hover,
+.acao:focus-visible,
+.pilula:hover,
+.pilula:focus-visible {
+  color: var(--papel);
+  border-color: var(--acento);
+}
+
+.acao:hover::before,
+.acao:focus-visible::before,
+.pilula:hover::before,
+.pilula:focus-visible::before { transform: scaleX(1); }
+
+/* A pílula é o mesmo botão com as pontas arredondadas e o corpo menor. */
+.pilula {
+  border-radius: 999px;
+  min-height: 0;
+  padding: 0.42em 1.05em;
+  font-size: 15px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+/*
+  `.acao-forte` e `.pilula-vazada` sobraram como apelidos sem efeito próprio: o
+  markup de seis arquivos ainda os usa, e reescrever tudo só para apagar duas
+  linhas de CSS seria mexer em muito código para não mudar nada na tela.
+*/
+.acao-forte,
+.pilula-vazada { border-color: var(--linha); }
+
+/*
+  Link de texto: o sublinhado já está lá, mas acende e engrossa quando você
+  chega perto. Manter o sublinhado sempre visível é acessibilidade — cor
+  sozinha não distingue link para quem não vê cor.
+*/
+.enlace {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--linha);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  transition:
+    color 220ms var(--curva-ui),
+    text-decoration-color 220ms var(--curva-ui),
+    text-underline-offset 220ms var(--curva-ui);
+}
+
+.enlace:hover {
+  color: var(--acento);
+  text-decoration-color: var(--acento);
+  text-underline-offset: 0.26em;
+}
+
+/*
+  Aba do menu: o traço nasce na esquerda e corre até o fim. Sem sublinhado
+  parado, porque a navegação inteira sublinhada vira ruído — aqui a posição no
+  cabeçalho já diz que é link.
+*/
+.aba {
+  position: relative;
+  color: var(--tinta-fraca);
+  text-decoration: none;
+  transition: color 220ms var(--curva-ui);
+}
+
+.aba::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.24em;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 340ms var(--curva-ui);
+}
+
+.aba:hover, .aba:focus-visible { color: var(--tinta); }
+.aba:hover::after, .aba:focus-visible::after { transform: scaleX(1); }
+
+/*
+  Linha de lista — serviço, trabalho, capítulo.
+  O bloco inteiro desliza alguns pixels para a direita, como quem puxa a folha
+  para ler. É o gesto que dá a sensação de material em vez de tela.
+*/
+.linha-viva,
+.desliza {
+  transition: transform 420ms var(--curva-ui);
+}
+
+/*
+  O deslize mora num filho (.desliza) sempre que o bloco entra animado.
+
+  `.fx-stagger > *` e `.fx-up` terminam com animation-fill-mode: forwards, e
+  valor de animação preenchida vence qualquer transform declarado — inclusive o
+  do :hover. Era por isso que os serviços tinham parado de andar: a regra
+  continuava lá, sem nunca chegar a valer. Quem tem filho .desliza abre mão do
+  próprio transform para os dois não somarem 12px.
+*/
+.linha-viva:hover:not(:has(.desliza)),
+.linha-viva:focus-within:not(:has(.desliza)) { transform: translateX(6px); }
+
+.linha-viva:hover .desliza,
+.linha-viva:focus-within .desliza { transform: translateX(6px); }
+
+/* As marcações da cota crescem junto: a régua reage à leitura. */
+.cota::before,
+.cota::after {
+  transition:
+    height 420ms var(--curva-ui),
+    background-color 300ms var(--curva-ui);
+}
+
+.linha-viva:hover .cota::before,
+.linha-viva:hover .cota::after,
+.cota:hover::before,
+.cota:hover::after {
+  height: 15px;
+  background: var(--acento);
+}
+
+/*
+  Imagem: escala muito devagar e muito pouco, com o recorte segurando a borda.
+  1,1s é lento de propósito — rápido demais vira efeito de banner.
+*/
+.moldura {
+  overflow: hidden;
+  display: block;
+}
+
+.moldura img,
+.moldura svg {
+  transition: transform 1100ms var(--curva-ui);
+  will-change: transform;
+}
+
+.grupo-imagem:hover .moldura img,
+.grupo-imagem:hover .moldura svg {
+  transform: scale(1.035);
+}
+
+/* --------------------------------------------------------------------------
+   11. O ponto
+   --------------------------------------------------------------------------
+   Não é pontuação: é o indicador de estado do site.
+
+   A ideia original era mais ambiciosa: existir um ponto só, que saía do
+   logotipo quando ia marcar o temperamento ativo. Na prática o logotipo ficava
+   lendo "persona lize" e a primeira reação de quem via era "está quebrado", e
+   não "que detalhe". Detalhe que precisa ser explicado falhou.
+
+   O ponto ficou no logotipo. O marcador de estado continua existindo ao lado
+   da palavra escolhida — só não é mais o mesmo ponto.
+   -------------------------------------------------------------------------- */
+
+.ponto { color: var(--acento); }
+
+/*
+  A marca é a única coisa do site que se mexe sozinha.
+
+  O ponto respira: 4,2s de ciclo, escala e opacidade quase imperceptíveis. É
+  devagar o bastante para não pedir atenção e presente o bastante para o
+  logotipo parecer vivo em vez de impresso. Quem olha por três segundos vê;
+  quem passa direto, não.
+
+  No hover a respiração para e o ponto abre — a marca deixa de respirar para
+  responder a você. Parar é tão expressivo quanto mexer.
+*/
+@keyframes respiro {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.28); opacity: 0.68; }
+}
+
+.marca {
+  position: relative;
+  display: inline-block;
+  text-decoration: none;
+  transition: color 260ms var(--curva-ui);
+}
+
+.marca .ponto {
+  display: inline-block;
+  animation: respiro 4200ms ease-in-out infinite;
+  transition:
+    color 220ms var(--curva-ui),
+    transform 420ms var(--curva-ui);
+}
+
+.marca::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.1em;
+  height: 1px;
+  background: var(--acento);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 420ms var(--curva-ui);
+}
+
+.marca:hover::after,
+.marca:focus-visible::after { transform: scaleX(1); }
+
+.marca:hover .ponto,
+.marca:focus-visible .ponto {
+  animation: none;
+  transform: scale(1.7);
+  color: var(--tinta);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marca .ponto { animation: none; }
+}
+
+.ponto-estado {
+  display: inline-block;
+  width: 0.26em;
+  height: 0.26em;
+  background: var(--acento);
+  vertical-align: baseline;
+}
+
+/*
+  O cabeçalho acompanha a rolagem com o fundo levemente desfocado. Não é
+  enfeite: sem ele, o menu do site inteiro fica a uma rolagem de distância.
+*/
+.cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in oklab, var(--papel) 82%, transparent);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border-bottom: 1px solid var(--linha);
+  transition: background-color 400ms var(--curva-ui);
+}
+
+/*
+  As classes utilitárias saíram daqui para o css porque o cabeçalho passou a ter
+  dois arranjos diferentes, e não só larguras diferentes: no desktop é uma linha
+  com marca e navegação nas pontas; no telefone são duas, com a navegação
+  embaixo e uma alavanca que a recolhe.
+*/
+.cabecalho-interno {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3) var(--e5);
+  max-width: 1240px;
+  margin-inline: auto;
+  padding: var(--e4) var(--e5);
+}
+
+/* Sem a alavanca, o conteúdo é só o segundo item da linha. */
+.barra-alavanca { display: none; }
+
+@media (max-width: 760px) {
+  .cabecalho-interno { padding-inline: var(--e4); }
+
+  /*
+    A alavanca. Só existe no telefone, e é ela que decide a altura da barra —
+    numa tela pequena o cabeçalho comia quase um quinto da capa.
+  */
+  .barra-alavanca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--tinta);
+    cursor: pointer;
+    /* A seta aponta para cima quando está aberta — "recolher para cima" — e dá
+       meia volta ao fechar. Uma forma só, girando, em vez de dois ícones. */
+    transition: transform 300ms var(--curva-ui), opacity 200ms var(--curva-ui);
+  }
+
+  .barra-alavanca[aria-expanded="false"] { transform: rotate(180deg); }
+  .barra-alavanca:hover { opacity: 0.7; }
+
+  /*
+    O recolhimento por grid-template-rows anima de altura real até zero sem
+    ninguém precisar medir o conteúdo. `max-height` com número chutado ou
+    corta um item a mais no futuro, ou deixa a transição com uma pausa morta
+    quando o chute é maior que o conteúdo.
+  */
+  .barra-conteudo {
+    flex-basis: 100%;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 320ms var(--curva-ui), opacity 320ms var(--curva-ui);
+    opacity: 0;
+  }
+
+  .barra-conteudo > * {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .barra-aberta {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+.pular-para-conteudo {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 50;
+  background: var(--papel);
+  color: var(--tinta);
+  padding: var(--e3) var(--e4);
+  border: 1px solid var(--acento);
+}
+
+.pular-para-conteudo:focus { left: var(--e4); top: var(--e4); }
+
+/* --------------------------------------------------------------------------
+   14. A capa
+   --------------------------------------------------------------------------
+   Um vídeo tocando em laço, em tela cheia, atrás do texto.
+
+   Ele não é mais percorrido pelo mouse. A versão anterior amarrava o tempo do
+   vídeo ao cursor, e isso tinha dois defeitos ao mesmo tempo: no celular não
+   existe cursor, e no desktop buscar num arquivo de 3828x2164 tem teto de uns
+   doze quadros por segundo — medido. O gesto era exclusivo e travado. Agora é
+   o mesmo vídeo, do mesmo jeito, nos dois lugares.
+
+   O fundo do site é o mesmo preto do vídeo, então a capa não tem borda: ela
+   simplesmente termina onde a luz acaba.
+   -------------------------------------------------------------------------- */
+
+.capa {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: calc(100svh - 72px);
+  padding: var(--e7) var(--e5) var(--e7);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+@media (min-width: 761px) {
+  .capa { justify-content: center; padding-bottom: var(--e6); }
+}
+
+/*
+  Duas cópias empilhadas do mesmo arquivo. A transição de opacidade dura
+  exatamente a sobreposição declarada em capa-motor.tsx (FUSAO): quando uma
+  chega perto do fim, a outra recomeça e as duas trocam de lugar. É o que
+  transforma um arquivo com começo e fim num laço sem emenda.
+*/
+.capa-filmes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/*
+  A cortina que esconde o vídeo até ele estar correndo de verdade.
+
+  Quando o navegador recusa a reprodução automática, ele desenha um botão de
+  play por cima do quadro. Esse botão mora no shadow DOM do <video>: nenhum
+  seletor da página alcança, nenhum atributo desliga. A saída é tapar.
+
+  E é tapar mesmo — uma camada opaca por cima —, não apagar o vídeo por
+  opacidade, que era como estava antes. O WebKit condiciona a reprodução
+  automática a o elemento estar sendo exibido, e um vídeo em opacidade zero
+  corre o risco de contar como escondido: ele não tocaria por estar invisível e
+  continuaria invisível por não estar tocando. Era um nó que eu mesmo tinha
+  dado. Aqui o <video> segue visível e pintado do jeito normal; quem está por
+  cima é esta cortina, que sai de cena quando o relógio do vídeo anda.
+
+  Ela é irmã dos vídeos, e não um bloco solto na capa, para pintar acima deles
+  sem precisar mexer no z-index de mais nada.
+*/
+.capa-cortina {
+  position: absolute;
+  inset: 0;
+  /* Os vídeos são z-index 0; este 1 põe a cortina acima deles sem depender da
+     ordem do documento. Continua tudo dentro de .capa-filmes, então o véu da
+     capa segue pintando por cima do conjunto. */
+  z-index: 1;
+  /*
+    Preto opaco, e é ele que faz o trabalho de tapar.
+
+    Já tentei tapar com o --fundo-desenhado sozinho e não funcionou: aqueles
+    gradientes têm `transparent` no meio, foram feitos para brilhar SOBRE o
+    preto da página, e deixavam passar tudo que estava atrás — o botão de play
+    inclusive. Cor de fundo é o que segura; o quadro parado vai por cima dela.
+  */
+  background-color: var(--papel);
+  /*
+    O gradiente continua aqui, embaixo do quadro parado, como piso.
+
+    A cortina só entra depois da hidratação, e o quadro é um arquivo que ainda
+    precisa chegar. Sem este piso haveria um pisca — gradiente do ::before,
+    preto por um instante, e então a imagem. Com ele, o que estava na tela
+    continua na tela até a foto cobrir.
+  */
+  background-image: var(--fundo-desenhado);
+  transition: opacity 1s ease;
+}
+
+.capa-cortina-fora { opacity: 0; }
+
+.capa-filme {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: opacity 1.6s linear;
+}
+
+
+/*
+  O enquadramento do desktop.
+
+  O texto ocupa a metade esquerda e para na altura do primeiro serviço, então
+  sobrava um vazio grande à direita e embaixo. A escala empurra as flores para
+  fora do centro em vez de deixá-las coincidindo com as letras: crescem, andam
+  para a direita e descem até quase encostar na cota que abre "o que eu faço".
+
+  Escala em transform, e não em object-position, porque object-position só
+  reenquadra — não aumenta o assunto dentro do quadro, que é o que faltava.
+*/
+@media (min-width: 761px) {
+  .capa-filme {
+    transform: translate(11%, 9%) scale(1.28);
+    transform-origin: center;
+  }
+}
+
+/*
+  O enquadramento do telefone.
+
+  O vídeo é 1912×1080, deitado; a tela do telefone é em pé. `contain` mostrava
+  o quadro inteiro numa faixa de uns 220px de altura — cabia sem cortar, mas as
+  flores moram no meio do quadro e sobrava vídeo preto ocupando a largura toda.
+  Era pequeno e ficava por cima do texto em vez de atrás dele.
+
+  Com `cover` a altura é que manda: o quadro aparece inteiro de cima a baixo, e
+  o que sai fora são as laterais pretas, onde não há nada. As flores ocupam a
+  tela inteira e o texto passa por cima delas — que é onde o véu vertical entra,
+  logo abaixo.
+*/
+@media (max-width: 760px) {
+  .capa-filme {
+    object-fit: cover;
+    object-position: center;
+  }
+
+  /*
+    No telefone a espera volta a ser só o gradiente.
+
+    O quadro parado do vídeo foi uma tentativa de deixar a espera parecida com
+    o site; na tela pequena ficou estranho — uma foto imóvel ocupando a capa
+    inteira lê como imagem que não carregou, e não como vídeo prestes a
+    começar. O gradiente animado não finge ser vídeo, e por isso não decepciona.
+
+    No desktop o quadro fica: lá ele aparece por um instante só, entre o
+    carregamento e a reprodução, e serve justamente para tapar esse instante.
+  */
+  .capa-quadro { display: none; }
+}
+
+/*
+  O fundo desenhado. Preto chapado atrás de um texto claro é economia que se vê.
+
+  Aparece em dois momentos diferentes, e por isso a arte mora num token em vez
+  de num lugar só: aqui, quando não há vídeo nenhum (movimento reduzido, ou
+  arquivo que não carregou), e na cortina de .capa-cortina, enquanto o vídeo
+  existe mas ainda não começou. O mesmo desenho, dois papéis.
+*/
+.capa {
+  --fundo-desenhado:
+    radial-gradient(46% 40% at 72% 26%, color-mix(in oklab, var(--acento) 24%, transparent), transparent 66%),
+    radial-gradient(40% 34% at 84% 58%, color-mix(in oklab, var(--acento) 12%, transparent), transparent 70%),
+    radial-gradient(58% 48% at 14% 86%, color-mix(in oklab, var(--bloco) 80%, transparent), transparent 72%);
+}
+
+.capa:not(.capa-com-filme)::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  z-index: 0;
+  background: var(--fundo-desenhado);
+  animation: deriva 26s ease-in-out infinite alternate;
+}
+
+@keyframes deriva {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to   { transform: translate3d(3%, 2%, 0) scale(1.08); }
+}
+
+/*
+  O véu. Agora é bem mais leve que na versão anterior: o vídeo já é escuro por
+  natureza, quase todo preto, e o texto mora do lado onde não há luz. Escurecer
+  muito só apagaria as flores, que são a única coisa que existe no quadro.
+*/
+.capa-veu {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in oklab, var(--papel) 80%, transparent) 0%,
+      color-mix(in oklab, var(--papel) 45%, transparent) 46%,
+      transparent 100%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--papel) 55%, transparent) 0%,
+      transparent 28%,
+      transparent 62%,
+      var(--papel) 100%
+    );
+}
+
+/*
+  No telefone o véu perde a metade horizontal. Ela existe para abrir espaço à
+  esquerda, onde mora o texto do desktop; numa tela estreita o texto está
+  embaixo, e o gradiente só apagaria o lado esquerdo das flores. Sobra a
+  vertical, que é a que separa a capa do que vem depois.
+*/
+@media (max-width: 760px) {
+  .capa-veu {
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--papel) 55%, transparent) 0%,
+      transparent 22%,
+      color-mix(in oklab, var(--papel) 40%, transparent) 46%,
+      color-mix(in oklab, var(--papel) 82%, transparent) 68%,
+      var(--papel) 100%
+    );
+  }
+}
+
+.capa-conteudo {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+.capa-rotulo,
+.capa-frase { max-width: 34rem; }
+
+/* A fileira de pílulas é mais larga que o texto de propósito: com a medida do
+   texto, as quatro quebravam 3+1 e a última ficava sozinha embaixo. */
+.capa-pilulas { max-width: 46rem; }
+
+/*
+  O rótulo. O desfoque virou movimento em vez de estado: ele entra fora de foco
+  e resolve. Desfoque permanente é texto ilegível permanente — e borrão é
+  medida absoluta enquanto corpo de texto não, então os mesmos pixels que ficam
+  sutis num título grande comiam a linha de 18px no telefone.
+*/
+.capa-rotulo {
+  margin: 0 0 var(--e4);
+  font-size: clamp(18px, 3.4vw, 26px);
+  line-height: 1.3;
+  color: var(--tinta);
+  /* As duas linhas são uma string só, com \n no meio; quem desenha a quebra é
+     o CSS. Assim o rótulo continua sendo um campo único para editar. */
+  white-space: pre-line;
+  animation: rotulo-em-foco 1.6s var(--curva-fx) both;
+}
+
+/* Fora do editor o rótulo não é alvo de nada. No editor precisa receber o
+   cursor. */
+.capa-rotulo:not([contenteditable]) {
+  user-select: none;
+  pointer-events: none;
+}
+
+@keyframes rotulo-em-foco {
+  from { filter: blur(7px); opacity: 0.45; }
+  to { filter: blur(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .capa-rotulo { animation: none; filter: none; }
+}
+
+.capa-frase {
+  margin: 0 0 var(--e4);
+  font-family: var(--fonte-display), Garamond, Georgia, serif;
+  font-weight: var(--peso);
+  font-size: clamp(24px, 4.2vw, 40px);
+  line-height: 1.24;
+  letter-spacing: -0.012em;
+  text-wrap: pretty;
+  /* Reserva a altura da frase inteira antes de a primeira letra ser digitada.
+     Sem isto, as pílulas descem um degrau a cada linha nova. */
+  min-height: 4.2em;
+}
+
+.capa-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: var(--acento);
+  animation: piscar 1s step-end infinite;
+}
+
+@keyframes piscar {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.capa-pilulas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.capa-pilulas-visivel { opacity: 1; transform: none; }
+
+.pilula-email { text-decoration: underline; text-underline-offset: 2px; }
+.pilula-icone { display: inline-flex; opacity: 0.7; }
+
+/*
+  Um par de interruptores por largura.
+
+  `display: none` e não `visibility`/opacidade porque o que está desligado
+  precisa sair da árvore de acessibilidade junto — senão um leitor de tela leria
+  os dois rótulos da mesma pílula, um atrás do outro.
+*/
+.so-estreito { display: none; }
+
+@media (max-width: 760px) {
+  .so-largo { display: none; }
+  .so-estreito { display: inline; }
+}
+
+/*
+  O par de botões que fecha a capa. No desktop fica ancorado no pé da tela, que
+  é onde sobrava espaço vazio; no telefone entra no fluxo, logo depois das
+  pílulas, porque ali o conteúdo já mora embaixo e não há vazio para preencher.
+*/
+.capa-rodape {
+  position: relative;
+  z-index: 2;
+  margin-top: var(--e5);
+}
+
+.capa-rodape-interno {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  max-width: 1180px;
+  margin-inline: auto;
+}
+
+/*
+  O risco entre as duas fileiras de botões.
+
+  Branco no meio e nada nas pontas: uma régua de ponta a ponta viraria borda de
+  caixa e cortaria a capa em duas. Assim ela acende no meio e some antes de
+  encostar nas margens.
+
+  O neon vem do halo, não da linha: o traço em si é de 1px e translúcido; quem
+  faz o branco parecer aceso é o brilho em volta.
+
+  A aparência é a mesma nos dois tamanhos; o que muda é só o quanto ela se
+  afasta dos botões, porque o vão que ela divide é bem maior no desktop.
+*/
+.capa-risco {
+  display: block;
+  width: 100%;
+  max-width: 1180px;
+  height: 1px;
+  /* --e5 dos dois lados no telefone: é o mesmo valor da margem de cima do
+     rodapé, então a linha fica no meio do vão em vez de encostada nos botões. */
+  margin: 0 auto var(--e5);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--tinta) 30%, transparent) 16%,
+    color-mix(in oklab, var(--tinta) 60%, transparent) 50%,
+    color-mix(in oklab, var(--tinta) 30%, transparent) 84%,
+    transparent 100%
+  );
+  box-shadow:
+    0 0 6px color-mix(in oklab, var(--tinta) 26%, transparent),
+    0 0 18px color-mix(in oklab, var(--acento) 20%, transparent);
+}
+
+@media (min-width: 761px) {
+  /*
+    Um botão só para levantar a capa inteira.
+
+    O texto e os botões estavam sentados baixo demais, com a metade de cima da
+    tela vazia. Os dois sobem juntos e pela mesma medida: o conteúdo por
+    transform, o rodapé pela âncora de baixo. Movendo igual, o vão entre as
+    pílulas e os botões — que é onde o risco mora — continua o mesmo.
+  */
+  .capa { --alcar: 15svh; }
+
+  .capa-conteudo { transform: translateY(calc(-1 * var(--alcar))); }
+
+  .capa-rodape {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--e6) + var(--alcar));
+    margin-top: 0;
+    padding-inline: var(--e5);
+  }
+
+  /* No desktop o vão entre as duas fileiras é grande, e a linha precisa se
+     afastar dos botões para dividi-lo em vez de virar enfeite colado neles.
+     Este é o número a mexer se ela ficar alta ou baixa demais. */
+  .capa-risco { margin-bottom: var(--e6); }
+}
+
+@media (max-width: 760px) {
+  /*
+    A mesma subida do desktop, por outro caminho.
+
+    No telefone o conteúdo e os botões estão os dois no fluxo, ancorados
+    embaixo — não há rodapé absoluto para reposicionar. Então basta engordar o
+    respiro de baixo: a âncora empurra o bloco inteiro para cima de uma vez, e
+    conteúdo e botões sobem juntos sem sair do lugar um em relação ao outro.
+
+    A medida é menor que a do desktop porque a folga aqui também é: sobravam
+    uns 265px entre o topo do texto e o pé da tela, e 10svh é o que aproxima
+    isso de dois respiros iguais.
+  */
+  .capa {
+    --alcar: 10svh;
+    padding-bottom: calc(var(--e6) + var(--alcar));
+  }
+
+  /*
+    E mais um empurrão, só no texto.
+
+    O `--alcar` acima sobe o bloco inteiro, texto e botões juntos, porque mexe
+    na âncora de baixo. Este aqui separa os dois: transform desloca o desenho
+    sem tirar o elemento do lugar que ele ocupa no fluxo, então as pílulas e as
+    frases sobem enquanto a linha e os dois botões continuam exatamente onde
+    estavam — eles não têm como saber que o vizinho de cima se moveu.
+
+    Sobra folga para isso: depois do --alcar restavam uns 138px entre o topo do
+    texto e o fim do cabeçalho, e 7svh gasta pouco mais de metade.
+  */
+  .capa-conteudo { transform: translateY(-7svh); }
+}
+
+/* --------------------------------------------------------------------------
+   15. A biblioteca de animações
+   --------------------------------------------------------------------------
+   Adaptadas de naocodei.com/free-code-css.
+
+   Duas regras que valem para todas:
+
+   1. As de entrada só correm quando o elemento ganha a classe `run`, que o
+      observador de components/animar.tsx põe quando ele aparece na tela. Sem
+      isso a animação já teria acabado quando você rolasse até ela.
+
+   2. O escalonamento da cascata é feito por :nth-child e não por uma variável
+      escrita pelo JavaScript. Doze filhos cobrem qualquer lista que este site
+      tem, e resolver no CSS significa que a lista escalona mesmo se o script
+      não carregar.
+   -------------------------------------------------------------------------- */
+
+/* Estado inicial só existe quando há JavaScript para removê-lo. Sem o atributo
+   no <html>, nada fica invisível esperando um observador que não vem. */
+[data-fx] .fx-fade,
+[data-fx] .fx-up,
+[data-fx] .fx-pop,
+[data-fx] .fx-blur,
+[data-fx] .fx-slide-l,
+[data-fx] .fx-slide-r,
+[data-fx] .fx-stagger > * { will-change: opacity, transform; }
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-fx] .fx-fade { opacity: 0; }
+  [data-fx] .run.fx-fade,
+  [data-fx] .run .fx-fade { animation: fx-aparecer 0.8s ease-out forwards; }
+
+  [data-fx] .fx-up { opacity: 0; transform: translateY(26px); }
+  [data-fx] .run.fx-up,
+  [data-fx] .run .fx-up { animation: fx-subir 0.7s var(--curva-fx) forwards; }
+
+  [data-fx] .fx-pop { opacity: 0; transform: scale(0.72); }
+  [data-fx] .run.fx-pop,
+  [data-fx] .run .fx-pop { animation: fx-crescer 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+  [data-fx] .fx-blur { opacity: 0; filter: blur(14px); transform: scale(1.04); }
+  [data-fx] .run.fx-blur,
+  [data-fx] .run .fx-blur { animation: fx-resolver 0.9s var(--curva-fx) forwards; }
+
+  [data-fx] .fx-slide-l { opacity: 0; transform: translateX(-40px); }
+  [data-fx] .fx-slide-r { opacity: 0; transform: translateX(40px); }
+  [data-fx] .run.fx-slide-l,
+  [data-fx] .run.fx-slide-r,
+  [data-fx] .run .fx-slide-l,
+  [data-fx] .run .fx-slide-r { animation: fx-deslizar 0.6s var(--curva-fx) forwards; }
+
+  [data-fx] .fx-stagger > * { opacity: 0; transform: translateY(20px); }
+  [data-fx] .run.fx-stagger > * { animation: fx-subir 0.6s var(--curva-fx) forwards; }
+  [data-fx] .run.fx-stagger > *:nth-child(1)  { animation-delay: 0ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(2)  { animation-delay: 80ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(3)  { animation-delay: 160ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(4)  { animation-delay: 240ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(5)  { animation-delay: 320ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(6)  { animation-delay: 400ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(7)  { animation-delay: 480ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(8)  { animation-delay: 560ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(9)  { animation-delay: 640ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(10) { animation-delay: 720ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(11) { animation-delay: 800ms; }
+  [data-fx] .run.fx-stagger > *:nth-child(n + 12) { animation-delay: 880ms; }
+
+  /* A cortina: uma faixa atravessa e o texto fica atrás dela. */
+  [data-fx] .fx-curtain { position: relative; display: inline-block; overflow: hidden; }
+  [data-fx] .fx-curtain > span { display: inline-block; opacity: 0; }
+  [data-fx] .fx-curtain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--acento);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  [data-fx] .run.fx-curtain::after { animation: fx-cortina 1s cubic-bezier(0.76, 0, 0.24, 1) forwards; }
+  [data-fx] .run.fx-curtain > span { animation: fx-surgir 0.01s linear 0.5s forwards; }
+
+  /* O traço que se desenha. Precisa de pathLength="1" no SVG para o
+     dasharray funcionar sem alguém medir o caminho na mão. */
+  [data-fx] .fx-draw [pathLength] { stroke-dasharray: 1; stroke-dashoffset: 1; }
+  [data-fx] .run.fx-draw [pathLength] { animation: fx-desenhar 1.4s var(--curva-fx) forwards; }
+}
+
+@keyframes fx-aparecer { to { opacity: 1; } }
+@keyframes fx-subir { to { opacity: 1; transform: none; } }
+@keyframes fx-crescer { to { opacity: 1; transform: scale(1); } }
+@keyframes fx-deslizar { to { opacity: 1; transform: none; } }
+@keyframes fx-resolver { to { opacity: 1; filter: blur(0); transform: none; } }
+@keyframes fx-surgir { to { opacity: 1; } }
+@keyframes fx-desenhar { to { stroke-dashoffset: 0; } }
+@keyframes fx-cortina {
+  0% { transform: scaleX(0); transform-origin: left; }
+  50% { transform: scaleX(1); transform-origin: left; }
+  50.1% { transform-origin: right; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+
+/* --- as que correm sozinhas ---------------------------------------------- */
+
+@keyframes fx-flutuar {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes fx-respirar {
+  0%, 100% { transform: scale(1); opacity: 0.86; }
+  50% { transform: scale(1.04); opacity: 1; }
+}
+
+.fx-float { animation: fx-flutuar 4.6s ease-in-out infinite; }
+.fx-breathe { animation: fx-respirar 4s ease-in-out infinite; }
+
+/*
+  A esteira. O trilho tem o conteúdo duplicado e anda exatamente metade da
+  própria largura: no fim do ciclo a segunda cópia está onde a primeira
+  começou, e o salto de volta é invisível. Para no hover para dar tempo de ler.
+*/
+.fx-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+
+.fx-marquee .trilho {
+  display: flex;
+  gap: var(--e5);
+  width: max-content;
+  animation: fx-esteira 32s linear infinite;
+}
+
+.fx-marquee:hover .trilho,
+.fx-marquee:focus-within .trilho { animation-play-state: paused; }
+
+@keyframes fx-esteira {
+  to { transform: translateX(-50%); }
+}
+
+/* O brilho que atravessa. Uma faixa de luz cruza a superfície no hover. */
+.fx-shine { position: relative; overflow: hidden; }
+
+.fx-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 38%,
+    color-mix(in oklab, var(--tinta) 16%, transparent) 50%,
+    transparent 62%
+  );
+  transform: translateX(-100%);
+  pointer-events: none;
+}
+
+.fx-shine:hover::after,
+.fx-shine:focus-within::after { animation: fx-brilho 0.9s ease-out; }
+
+@keyframes fx-brilho {
+  to { transform: translateX(100%); }
+}
+
+/* --- as que respondem ao cursor ------------------------------------------ */
+
+/* Inclinação em 3D. O ângulo vem do JavaScript; aqui só mora a suavização. */
+.fx-tilt {
+  transition: transform 0.18s ease-out;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Ímã: o botão se desloca alguns pixels na direção do cursor. */
+.fx-magnet {
+  transition: transform 0.25s var(--curva-fx);
+  will-change: transform;
+}
+
+/*
+  Ímã e onda são de série em todo botão do site.
+
+  Podiam ser duas classes a mais em cada `.acao` espalhada por seis arquivos,
+  mas aí a próxima que alguém escrevesse sairia sem elas e o site teria dois
+  tipos de botão sem ninguém ter decidido isso. Aqui é uma regra: se é botão,
+  responde ao cursor. Ver a lista de seletores em components/animar.tsx.
+*/
+/*
+  O ímã e a varredura, os dois lentos.
+
+  Estavam rápidos e fortes demais: o botão saltava para o cursor e a cor virava
+  num piscar. Botão que reage mais rápido que a mão parece nervoso.
+
+  Agora o deslocamento é metade do que era e leva mais que o dobro do tempo —
+  o botão acompanha, não pula.
+*/
+.acao,
+.pilula {
+  will-change: transform;
+  transition-property: color, border-color, transform;
+  transition-duration: 480ms, 480ms, 620ms;
+  transition-timing-function: var(--curva-ui), var(--curva-ui), var(--curva-fx);
+}
+
+.acao::before,
+.pilula::before {
+  transition: transform 620ms var(--curva-fx);
+}
+
+.acao:active,
+.pilula:active { transform: translateY(1px); }
+
+/* Onda no clique. */
+.fx-ripple { position: relative; overflow: hidden; }
+
+.fx-ripple .onda,
+.acao .onda,
+.pilula .onda {
+  position: absolute;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--tinta) 26%, transparent);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  animation: fx-onda 0.62s ease-out forwards;
+}
+
+@keyframes fx-onda {
+  to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   16. Utilidades
+   -------------------------------------------------------------------------- */
+
+/* Some da tela, continua na árvore de acessibilidade. */
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   17. O briefing
+   --------------------------------------------------------------------------
+   Uma pergunta por tela. A estética é a mesma do resto: a grade de 13, a cota
+   como divisória, a pílula como alvo de clique e o ponto da marca no progresso.
+   Nada de vocabulário novo — o briefing é uma sala da mesma casa, não um anexo.
+   -------------------------------------------------------------------------- */
+
+/*
+  Campo de formulário.
+
+  Os mesmos valores que /contato guardava numa constante Tailwind local. Virou
+  classe porque agora há dois formulários no site, e estilo de campo copiado é
+  estilo que diverge no primeiro ajuste. O contato continua com a constante
+  dele; unificar os dois é limpeza para outra hora, não para o meio de uma
+  funcionalidade.
+*/
+.campo {
+  width: 100%;
+  border: 1px solid var(--linha);
+  border-radius: 2px;
+  background: transparent;
+  padding: var(--e2) var(--e3);
+  font-size: inherit;
+  font-family: inherit;
+  color: var(--tinta);
+}
+
+.campo:focus { border-color: var(--acento); outline: none; }
+
+.briefing { max-width: 42rem; }
+
+/*
+  O progresso: o ponto da marca andando por um trilho.
+
+  Uma barra retangular que engorda é o desenho padrão, e é exatamente por isso
+  que não serve — o site tem um ponto na assinatura (persona.lize) e ele vira o
+  indicador. O mesmo vocabulário em vez de dois.
+*/
+.briefing-progresso {
+  position: relative;
+  height: 10px;
+  margin-bottom: var(--e6);
+}
+
+.briefing-trilho {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--linha);
+}
+
+.briefing-ponto {
+  position: absolute;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  border-radius: 50%;
+  background: var(--acento);
+  transform: translateY(-50%);
+  transition: left 420ms var(--curva-ui);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--acento) 60%, transparent);
+}
+
+/*
+  A troca de tela.
+
+  Uma transição só, igual em todas as perguntas — o 5.2 é explícito quanto a
+  isso, e com razão: efeito diferente por pergunta faz o formulário parecer sete
+  formulários. A `key` do React é o que dispara, então a animação corre sozinha
+  a cada pergunta nova.
+*/
+.briefing-tela {
+  animation: briefing-entra 260ms var(--curva-fx) both;
+  outline: none;
+}
+
+@keyframes briefing-entra {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .briefing-tela { animation: none; }
+  .briefing-ponto { transition: none; }
+}
+
+.briefing-campo { border: 0; padding: 0; margin: 0; }
+.briefing-enunciado { display: block; padding: 0; }
+
+.briefing-opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-top: var(--e5);
+}
+
+/*
+  A opção é a pílula da capa, com o número do atalho na frente. Reaproveitar o
+  alvo de clique que o site já tem significa que quem chegou pela home já sabe
+  o que é clicável aqui.
+*/
+.briefing-opcao {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  padding: var(--e2) var(--e4);
+  background: transparent;
+  color: var(--tinta);
+  font-family: inherit;
+  font-size: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 300ms var(--curva-ui), background-color 300ms var(--curva-ui);
+}
+
+.briefing-opcao:hover { border-color: var(--acento); }
+
+.briefing-opcao-marcada {
+  border-color: var(--acento);
+  background: color-mix(in oklab, var(--acento) 14%, transparent);
+}
+
+/* O número não é enfeite: é a tecla que escolhe aquela opção. */
+.briefing-tecla {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 50%;
+  border: 1px solid var(--linha);
+  font-size: 0.78em;
+  color: var(--tinta-fraca);
+}
+
+.briefing-opcao-marcada .briefing-tecla { border-color: var(--acento); color: var(--acento); }
+
+/* No telefone o atalho não existe, e um número sem função é ruído. */
+@media (max-width: 760px) {
+  .briefing-tecla { display: none; }
+}
+
+.briefing-contato {
+  display: grid;
+  gap: var(--e4);
+  margin-top: var(--e5);
+  max-width: 30rem;
+}
+
+.briefing-rotulo { display: grid; gap: var(--e1); }
+.briefing-rotulo > span { font-size: 15px; color: var(--tinta-fraca); }
+
+.briefing-erro { color: var(--acento); }
+
+.briefing-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--e6);
+  padding-top: var(--e3);
+  border-top: 1px solid var(--linha);
+}
+
+.briefing-voltar {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--tinta-fraca);
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: color 300ms var(--curva-ui);
+}
+
+.briefing-voltar:hover { color: var(--tinta); }
+
+/* --- O resultado --------------------------------------------------------- */
+
+.briefing-resultado { display: grid; gap: var(--e6); max-width: 46rem; }
+
+.briefing-amostra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--e5);
+}
+
+.briefing-paleta { display: flex; }
+
+.briefing-cor {
+  width: 54px;
+  height: 54px;
+  /* Sem borda entre elas: a paleta é uma faixa contínua, e um fio branco no
+     meio mudaria as cores que ela está mostrando. */
+  display: block;
+}
+
+.briefing-par { color: var(--acento); }
+
+/*
+  A maquete da amostra visual. Proporção fixa pelo viewBox do svg, então ela
+  encolhe inteira no telefone em vez de espremer o desenho.
+
+  A borda é a moldura do "isto é uma tela": sem ela, um retângulo colorido no
+  meio da página lê como bloco de cor, não como esboço de página.
+*/
+.briefing-maquete {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin-top: var(--e5);
+  border: 1px solid var(--linha);
+}
+
+.briefing-acoes { display: flex; flex-wrap: wrap; gap: var(--e3); }
+
+/*
+  O endereço que a pessoa precisa guardar.
+
+  Era uma nota cinza de 13px embaixo de um botão. Mas é a única coisa daquela
+  tela que se perde ao fechar a aba — todo o resto ela reconstrói respondendo de
+  novo. Então virou um campo: moldura, contraste de texto normal e o botão de
+  copiar encostado nele.
+
+  `break-all` porque o token não tem espaço nem hífen onde quebrar; sem isso ele
+  estoura a coluna no telefone em vez de passar para a linha de baixo.
+*/
+.briefing-guardar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--e2);
+}
+
+.briefing-endereco {
+  flex: 1 1 22rem;
+  min-width: 0;
+  border: 1px solid color-mix(in oklab, var(--acento) 45%, transparent);
+  padding: var(--e2) var(--e3);
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--tinta);
+  word-break: break-all;
+  /* Vertical: o endereço ocupa uma ou duas linhas conforme a largura, e centrar
+     deixaria o campo com altura diferente do botão em cada caso. */
+  display: flex;
+  align-items: center;
+}
+
+.briefing-copiar { flex: none; }
+
+/* --------------------------------------------------------------------------
+   18. A página que o cliente guarda
+   --------------------------------------------------------------------------
+   O link do briefing. Os gráficos são desenhados com largura em porcentagem,
+   calculada no servidor — sem biblioteca, sem medir nada no navegador, sem
+   piscar enquanto hidrata. Também é o que faz a página imprimir bem, que é o
+   que acontece com orçamento.
+   -------------------------------------------------------------------------- */
+
+.resumo { display: grid; gap: var(--e6); max-width: 48rem; }
+
+/*
+  A faixa de investimento.
+
+  Um intervalo, não um valor — e o desenho precisa dizer isso. Barra cheia
+  sugere um número; aqui há duas hastes e o vão aceso entre elas.
+*/
+.resumo-faixa {
+  position: relative;
+  height: 26px;
+}
+
+.resumo-faixa-trilho {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--linha);
+}
+
+.resumo-faixa-intervalo {
+  position: absolute;
+  top: 50%;
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--acento) 35%, transparent),
+    var(--acento),
+    color-mix(in oklab, var(--acento) 35%, transparent)
+  );
+}
+
+.resumo-faixa-haste {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 18px;
+  transform: translateY(-50%);
+  background: var(--acento);
+}
+
+.resumo-faixa-haste-inicio { left: 8%; }
+.resumo-faixa-haste-fim { right: 8%; }
+
+.resumo-faixa-pontas {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--e1);
+}
+
+/*
+  A composição do orçamento, empilhada.
+
+  Sem paleta nova: as fatias vão do aceso ao apagado na ordem em que entram na
+  conta. Cor por categoria pediria seis cores que o site não tem, e um gráfico
+  colorido no meio de uma página monocromática lê como widget colado.
+*/
+.resumo-barra {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  background: var(--bloco);
+}
+
+.resumo-fatia {
+  display: block;
+  height: 100%;
+  background: var(--acento);
+  /* O fio escuro entre as fatias é o que as separa sem precisar de borda. */
+  box-shadow: inset -1px 0 0 var(--papel);
+}
+
+.resumo-legenda { display: grid; gap: var(--e1); }
+
+.resumo-legenda li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e2);
+}
+
+.resumo-pastilha {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  background: var(--acento);
+}
+
+/* O número alinhado à direita: a coluna de porcentagem vira uma régua de
+   leitura em vez de terminar em lugares diferentes a cada linha. */
+.resumo-legenda .numero { margin-left: auto; }
+
+/* As semanas como marcas. Contar traços responde "isso é muito tempo?" mais
+   rápido que ler um número. */
+.resumo-semanas { display: flex; gap: 5px; }
+
+.resumo-semana {
+  width: 100%;
+  max-width: 34px;
+  height: 26px;
+  border: 1px solid color-mix(in oklab, var(--acento) 45%, transparent);
+}
+
+.resumo-semana-certa { background: color-mix(in oklab, var(--acento) 55%, transparent); }
+
+.resumo-respostas { display: grid; gap: 0; }
+
+/* Uma linha por pergunta, com fio entre elas: é a mesma divisória do resto do
+   site, no tamanho de uma lista. */
+.resumo-linha {
+  display: grid;
+  gap: var(--e1) var(--e5);
+  padding: var(--e3) 0;
+  border-bottom: 1px solid var(--linha);
+}
+
+@media (min-width: 761px) {
+  .resumo-linha { grid-template-columns: 1fr 1.1fr; align-items: baseline; }
+}
+
+.resumo-marcadas { display: flex; flex-wrap: wrap; gap: var(--e2); }
+
+/* A marca repete a pílula da capa, apagada: aqui ela não é clicável, e um alvo
+   que parece botão sem ser é promessa quebrada. */
+.resumo-marca {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in oklab, var(--acento) 40%, transparent);
+  border-radius: 999px;
+  padding: 2px var(--e3);
+  font-size: 15px;
+}
+
+/*
+  O botão de apagar do painel.
+
+  Discreto até você chegar perto. Ele mora numa lista cheia de controles usados
+  o tempo todo e é o único sem desfazer — chamar atenção o tempo todo seria
+  convidar ao clique; ficar invisível seria escondê-lo de quem precisa. Cinza
+  parado, vermelho no hover.
+*/
+.admin-apagar {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--tinta-fraca);
+  cursor: pointer;
+  transition: color 300ms var(--curva-ui);
+}
+
+.admin-apagar:hover,
+.admin-apagar:focus-visible { color: #ff6b6b; }
