@@ -25,6 +25,21 @@ import { LinkInterno } from "@/components/link-interno";
 */
 const FUSAO = 1.6;
 
+/*
+  Quanto tempo uma troca pode durar antes de ser dada por morta, em ms.
+
+  Uma dissolucao honesta leva FUSAO — 1,6s — mais o tempo do play(). Passou
+  disso com folga, nao e lentidao: e a aba que foi para segundo plano no meio e
+  deixou a promessa pendente. Quem chegar depois deste prazo tem permissao para
+  arrombar a tranca e retomar o video.
+
+  A folga e generosa de proposito. Arrombar cedo demais interromperia uma
+  dissolucao que so estava devagar, e o preco de esperar um pouco mais e um
+  video parado por mais um segundo — bem menor que o de cortar a transicao que
+  existe justamente para nao haver corte.
+*/
+const LIMITE_TROCA = FUSAO * 1000 + 2500;
+
 const VELOCIDADE = 38;
 const ESPERA = 600;
 
@@ -185,6 +200,23 @@ export function CapaMotor({
   */
   const visivelRef = useRef(0);
   const trocandoRef = useRef(false);
+  /*
+    Quando a tranca da troca foi fechada, e qual troca a fechou.
+
+    A tranca sozinha era um impasse esperando para acontecer. `trocar()` fecha
+    ela e so abre no `finally`; se a aba sai de cena bem no meio da dissolucao,
+    o iOS deixa a promessa do `play()` pendente e congela o `setTimeout` — o
+    `finally` nunca roda e a tranca fica fechada para sempre. Ao voltar, tudo
+    que tenta retomar o video comeca por "se esta trocando, nao mexe", entao
+    ninguem mexe nunca mais: video pausado, e nem tocar na tela resolve.
+
+    O horario permite reconhecer uma tranca velha demais para ser real. A
+    geracao permite descartar a troca zumbi: se ela acordar depois que alguem ja
+    tomou a tranca dela, o numero nao bate e ela para de mexer nas opacidades em
+    vez de brigar com quem assumiu.
+  */
+  const trocaEmRef = useRef(0);
+  const geracaoRef = useRef(0);
   const [entrou, setEntrou] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const { escrito, pronto } = useMaquinaDeEscrever(frase, !editando);
@@ -311,9 +343,22 @@ export function CapaMotor({
     function tentar() {
       if (!vivo) return;
 
-      // No meio de uma dissolucao nao se mexe: as duas estao tocando de
-      // proposito, e "consertar" aqui desfaria a transicao.
-      if (trocandoRef.current) return;
+      /*
+        No meio de uma dissolucao nao se mexe: as duas estao tocando de
+        proposito, e "consertar" aqui desfaria a transicao.
+
+        Mas so ate certo ponto. Uma troca que comecou ha mais de LIMITE_TROCA
+        nao esta acontecendo — ela morreu com a aba em segundo plano, e sua
+        tranca ficou fechada. Respeitar essa tranca para sempre e o que deixava
+        o video pausado ao voltar do navegador, sem cura nem tocando na tela.
+        Aqui ela e arrombada, e a geracao sobe para que a troca zumbi, se um dia
+        acordar, saiba que perdeu a vez.
+      */
+      if (trocandoRef.current) {
+        if (Date.now() - trocaEmRef.current < LIMITE_TROCA) return;
+        geracaoRef.current += 1;
+        trocandoRef.current = false;
+      }
 
       const filmes = [um, doisRef.current];
       const atual = filmes[visivelRef.current];
@@ -343,12 +388,32 @@ export function CapaMotor({
       setTocando(true);
     }
 
+    /*
+      Sair de cena cancela a troca que estiver em andamento.
+
+      Prevencao, e nao remendo: uma dissolucao so faz sentido enquanto alguem
+      esta olhando. Soltando a tranca na ida, a volta ja encontra tudo
+      destravado e nem precisa do prazo do LIMITE_TROCA. O prazo continua la
+      para o que escapar daqui — a aba que some sem aviso, o bfcache que nao
+      dispara nada.
+    */
+    function aoMudarVisibilidade() {
+      if (document.visibilityState === "visible") {
+        tentar();
+        return;
+      }
+      geracaoRef.current += 1;
+      trocandoRef.current = false;
+    }
+
     tentar();
     um.addEventListener("loadeddata", tentar);
     um.addEventListener("canplay", tentar);
     um.addEventListener("playing", confirmar);
     um.addEventListener("timeupdate", confirmar);
-    document.addEventListener("visibilitychange", tentar);
+    document.addEventListener("visibilitychange", aoMudarVisibilidade);
+    // O iOS restaura do bfcache sem passar por visibilitychange.
+    window.addEventListener("pageshow", tentar);
 
     /*
       A rede de gestos. Nao ha "once": a politica pode continuar recusando por
@@ -367,7 +432,8 @@ export function CapaMotor({
       um.removeEventListener("canplay", tentar);
       um.removeEventListener("playing", confirmar);
       um.removeEventListener("timeupdate", confirmar);
-      document.removeEventListener("visibilitychange", tentar);
+      document.removeEventListener("visibilitychange", aoMudarVisibilidade);
+      window.removeEventListener("pageshow", tentar);
       for (const sinal of sinais) document.removeEventListener(sinal, tentar);
     };
   }, [comVideo]);
@@ -417,7 +483,16 @@ export function CapaMotor({
       });
     }
 
-    async function trocar() {
+    /*
+      `minha` e a geracao desta troca. Toda vez que a funcao volta de um await
+      ela pergunta se ainda e a troca da vez — se nao for, para de mexer em
+      opacidade e sai sem desfazer nada. E o que impede uma dissolucao que ficou
+      pendente em segundo plano de acordar dez minutos depois e apagar o video
+      que alguem ja retomou.
+    */
+    async function trocar(minha: number) {
+      const atual = () => vivo && geracaoRef.current === minha;
+
       const saindo = filmes[visivelRef.current]!;
       const entrando = filmes[1 - visivelRef.current]!;
 
@@ -435,7 +510,7 @@ export function CapaMotor({
           Passar pelo escuro cai bem porque o arquivo comeca quase preto: o
           caminho entre o ultimo quadro e o primeiro e escuro de qualquer jeito.
         */
-        if (!vivo) return;
+        if (!atual()) return;
         saindo.style.opacity = "0";
         /*
           `await`, e nao um setTimeout solto.
@@ -448,20 +523,20 @@ export function CapaMotor({
           tranca so sai quando a emenda terminou.
         */
         await esperar(FUSAO * 1000);
-        if (!vivo) return;
+        if (!atual()) return;
         saindo.currentTime = 0;
         saindo.style.opacity = "1";
         await saindo.play().catch(() => {});
         return;
       }
 
-      if (!vivo) return;
+      if (!atual()) return;
       entrando.style.opacity = "1";
       saindo.style.opacity = "0";
       visivelRef.current = 1 - visivelRef.current;
 
       await esperar(FUSAO * 1000);
-      if (!vivo) return;
+      if (!atual()) return;
       saindo.pause();
       saindo.currentTime = 0;
     }
@@ -477,9 +552,14 @@ export function CapaMotor({
       if (this !== filmes[visivelRef.current]) return;
       if (this.currentTime < this.duration - FUSAO) return;
 
+      const minha = (geracaoRef.current += 1);
       trocandoRef.current = true;
-      void trocar().finally(() => {
-        trocandoRef.current = false;
+      trocaEmRef.current = Date.now();
+      void trocar(minha).finally(() => {
+        // So abre a tranca se ela ainda for desta troca. Se alguem ja a
+        // arrombou e comecou outra coisa, abrir aqui soltaria a tranca de quem
+        // esta trabalhando agora.
+        if (geracaoRef.current === minha) trocandoRef.current = false;
       });
     }
 
