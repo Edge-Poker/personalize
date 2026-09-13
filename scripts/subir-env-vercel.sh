@@ -1,57 +1,95 @@
 #!/usr/bin/env bash
 #
-# Sobe as variaveis do .env.local para o projeto do Vercel, de uma vez.
+# Sobe as variaveis que o app precisa para o projeto do Vercel.
 #
-# Roda DEPOIS de:
-#   npx vercel login     (login no navegador — so voce faz isso)
-#   npx vercel link      (vincula esta pasta a um projeto do Vercel)
+# Roda a partir da raiz do projeto, com a pasta ja vinculada (vercel link).
 #
-# Uso:
-#   bash scripts/subir-env-vercel.sh production
-#   bash scripts/subir-env-vercel.sh preview
+#   bash scripts/subir-env-vercel.sh
 #
-# Le cada linha CHAVE=valor do .env.local e manda para o Vercel. Se a variavel
-# ja existir naquele ambiente, remove e recria (pra poder rodar de novo sem dar
-# erro). Os valores saem daqui direto para o seu Vercel — nao passam por mais
-# lugar nenhum.
+# Como funciona: le cada valor do .env.local e manda por pipe para o
+# `vercel env add`. Nenhum valor aparece na tela nem fica em arquivo
+# intermediario — o que se imprime aqui e so o nome da variavel e o resultado.
+#
+# A lista e branca de proposito. So sobe o que lib/env.ts e lib/env.server.ts
+# realmente exigem. Fica de fora, deliberadamente:
+#
+#   SUPABASE_DB_PASSWORD   so os scripts locais usam (aplicar-migration.mjs).
+#   SUPABASE_PROJECT_REF   idem. A senha do banco nao tem motivo para estar
+#                          num servidor de build.
+#   VERCEL_OIDC_TOKEN      o proprio `vercel link` escreve isso no .env.local;
+#                          e credencial de maquina, nao configuracao do app.
+#
+# NEXT_PUBLIC_SITE_URL e o unico caso especial: no .env.local ele aponta para
+# localhost, que e o certo para desenvolver e o errado para producao. O valor
+# de producao vem do primeiro argumento, ou do padrao abaixo.
 
 set -euo pipefail
 
-AMBIENTE="${1:-production}"
+SITE_URL="${1:-https://personalize-edge-poker.vercel.app}"
 ENV_FILE=".env.local"
+AMBIENTES="production,preview,development"
+
+# As unicas que sobem. RESEND_API_KEY e opcional no schema: se faltar, o site
+# roda e so nao avisa de lead nova.
+OBRIGATORIAS="NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY ADMIN_EMAIL"
+OPCIONAIS="RESEND_API_KEY"
 
 if [ ! -f "$ENV_FILE" ]; then
   echo "nao achei $ENV_FILE — rode a partir da raiz do projeto." >&2
   exit 1
 fi
 
-# PASTA_BUILD e coisa de build local; nao vai pro Vercel.
-IGNORAR="PASTA_BUILD"
+ler() {
+  # Primeira ocorrencia, tudo depois do primeiro '='; tira aspas em volta.
+  local v
+  v="$(grep -m1 "^$1=" "$ENV_FILE" | cut -d= -f2- || true)"
+  v="${v%\"}"; v="${v#\"}"
+  printf '%s' "$v"
+}
 
-while IFS= read -r linha || [ -n "$linha" ]; do
-  # pula vazias e comentarios
-  case "$linha" in
-    ''|'#'*) continue ;;
+subir() {
+  local chave="$1" valor="$2" sensivel="$3"
+  # O valor vai por stdin, e nunca em --value: argumento de linha de comando
+  # aparece no `ps` e no historico do shell. --force sobrescreve o que ja
+  # existir, o que deixa este script poder rodar de novo sem limpar antes.
+  if printf '%s' "$valor" \
+    | npx --yes vercel@latest env add "$chave" "$AMBIENTES" "$sensivel" --force >/dev/null 2>&1; then
+    echo "  $chave -> $AMBIENTES (${#valor} caracteres, $sensivel)"
+  else
+    echo "  ERRO ao subir $chave" >&2
+    return 1
+  fi
+}
+
+echo "subindo variaveis para o projeto vinculado:"
+
+for chave in $OBRIGATORIAS; do
+  valor="$(ler "$chave")"
+  if [ -z "$valor" ]; then
+    echo "  ERRO: $chave esta vazia no $ENV_FILE" >&2
+    exit 1
+  fi
+  # Tudo que comeca com NEXT_PUBLIC_ e gravado no pacote que vai para o
+  # navegador — ja e publico por construcao. Guardar como Config em vez de
+  # Secret nao expoe nada novo e deixa o valor legivel depois, que e o que
+  # permite conferir um deploy sem adivinhar.
+  case "$chave" in
+    NEXT_PUBLIC_*) subir "$chave" "$valor" "--no-sensitive" ;;
+    *)             subir "$chave" "$valor" "--sensitive" ;;
   esac
-  # so linhas CHAVE=valor
-  case "$linha" in
-    *=*) : ;;
-    *) continue ;;
-  esac
+done
 
-  chave="${linha%%=*}"
-  valor="${linha#*=}"
-  # tira aspas em volta, se houver
-  valor="${valor%\"}"; valor="${valor#\"}"
+# O caso especial.
+subir "NEXT_PUBLIC_SITE_URL" "$SITE_URL" "--no-sensitive"
 
-  case " $IGNORAR " in *" $chave "*) echo "pulando $chave"; continue ;; esac
-
-  echo "-> $chave ($AMBIENTE)"
-  # remove se ja existe (silencioso), depois adiciona
-  npx vercel env rm "$chave" "$AMBIENTE" --yes >/dev/null 2>&1 || true
-  printf '%s' "$valor" | npx vercel env add "$chave" "$AMBIENTE" >/dev/null
-done < "$ENV_FILE"
+for chave in $OPCIONAIS; do
+  valor="$(ler "$chave")"
+  if [ -z "$valor" ]; then
+    echo "  $chave: ausente no $ENV_FILE — pulando (e opcional)"
+  else
+    subir "$chave" "$valor" "--sensitive"
+  fi
+done
 
 echo ""
-echo "pronto. as variaveis estao no ambiente '$AMBIENTE' do Vercel."
-echo "confira com: npx vercel env ls"
+echo "pronto. confira os nomes com: npx vercel env ls"

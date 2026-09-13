@@ -18,3 +18,4 @@ next-env.d.ts
 # Videos crus de trabalho. O do hero ja esta versionado em public/capa/lumen.mp4;
 # estas sao versoes antigas que nao precisam ir para o repositorio nem para o deploy.
 .video-capa/
+.env*
